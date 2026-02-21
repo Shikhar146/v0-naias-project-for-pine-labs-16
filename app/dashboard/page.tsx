@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { LayoutWrapper } from '@/components/layout-wrapper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +76,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <LayoutWrapper>
+    <div className="space-y-8">
       {/* Header */}
       <div className="border-b border-border/50 bg-card/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -299,5 +301,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </LayoutWrapper>
   );
 }
