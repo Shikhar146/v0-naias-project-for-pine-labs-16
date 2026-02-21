@@ -1,0 +1,80 @@
+================================================================================
+                    NAIAS - Quick Start (60 seconds)
+================================================================================
+
+STEP 1: Open Terminal/Command Prompt
+================================================================================
+Mac:   Open Applications > Utilities > Terminal
+Windows: Open Start > "cmd" or "PowerShell"
+Linux: Open any terminal
+
+
+STEP 2: Navigate to Project
+================================================================================
+cd /path/to/naias
+
+
+STEP 3: Install & Run (Copy-Paste This)
+================================================================================
+
+pnpm install
+
+pnpm dev
+
+
+STEP 4: Open in Browser
+================================================================================
+Go to: http://localhost:3000
+
+That's it! You're running NAIAS!
+
+
+NEXT: Explore Features
+================================================================================
+- Dashboard:        http://localhost:3000/dashboard
+- Investigations:   http://localhost:3000/investigations
+- Query Builder:    http://localhost:3000/query-builder
+- RCA Analysis:     http://localhost:3000/rca-analysis
+- Network Topology: http://localhost:3000/network-topology
+- Transaction Trace: http://localhost:3000/transaction-tracer
+
+
+TROUBLESHOOTING
+================================================================================
+
+Problem: "pnpm: command not found"
+Solution: npm install -g pnpm
+
+Problem: "Port 3000 already in use"
+Solution: pnpm dev -- -p 3001
+
+Problem: Module errors
+Solution: rm -rf node_modules && pnpm install && pnpm dev
+
+Problem: DATABASE warning
+Solution: This is OK for demo. Set DATABASE_URL in .env.local later.
+
+Problem: App won't load
+Solution: Wait 30 seconds for build to complete. Then refresh browser.
+
+
+FOR MORE HELP
+================================================================================
+Read: HOW_TO_RUN.md
+Read: SETUP_INSTRUCTIONS.md
+Read: QUICK_START.md
+
+
+QUICK COMMANDS
+================================================================================
+Start dev server:      pnpm dev
+Build for production:  pnpm build
+Run production build:  pnpm start
+Lint code:            pnpm lint
+Stop server:          CTRL+C (or CMD+C on Mac)
+
+
+YOU'RE ALL SET!
+================================================================================
+Run: pnpm install && pnpm dev
+Then go to: http://localhost:3000
