@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,17 +14,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, ArrowRight } from 'lucide-react';
+import { Search, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Investigation } from '@/lib/types/investigations';
 
 export default function InvestigationsPage() {
+  const router = useRouter();
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // Check if user is authenticated
+    const user = localStorage.getItem('user');
+    if (!user) {
+      // Redirect to login if not authenticated
+      router.push('/login');
+      return;
+    }
+    setIsAuthenticated(true);
+
     const fetchInvestigations = async () => {
       try {
         const orgId = localStorage.getItem('organizationId') || 'demo-org';
@@ -44,7 +56,7 @@ export default function InvestigationsPage() {
     };
 
     fetchInvestigations();
-  }, []);
+  }, [router]);
 
   const filteredInvestigations = investigations.filter((inv) => {
     const matchesSearch =
@@ -78,24 +90,28 @@ export default function InvestigationsPage() {
     return colors[status] || colors.draft;
   };
 
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b border-border/50 bg-card/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/dashboard">
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            </Button>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-foreground">Investigations</h1>
               <p className="text-muted-foreground mt-1">
                 Manage and track all incident investigations
               </p>
             </div>
-            <Button asChild size="lg">
-              <Link href="/investigations/new">
-                <Plus className="w-4 h-4 mr-2" />
-                New Investigation
-              </Link>
-            </Button>
           </div>
 
           {/* Filters */}
@@ -157,13 +173,8 @@ export default function InvestigationsPage() {
               <p className="text-muted-foreground mb-6">
                 {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                   ? 'Try adjusting your filters'
-                  : 'Create your first investigation to get started.'}
+                  : 'No investigations available yet.'}
               </p>
-              {!searchTerm && statusFilter === 'all' && typeFilter === 'all' && (
-                <Button asChild>
-                  <Link href="/investigations/new">Create Investigation</Link>
-                </Button>
-              )}
             </CardContent>
           </Card>
         ) : (

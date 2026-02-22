@@ -12,7 +12,7 @@ import { Investigation } from '@/lib/types/investigations';
 export default function ExecuteInvestigationPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
+  const [id, setId] = useState<string | null>(null);
 
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [executing, setExecuting] = useState(false);
@@ -33,6 +33,19 @@ export default function ExecuteInvestigationPage() {
   ]);
 
   useEffect(() => {
+    // Handle params as a Promise in Next.js 16
+    if (params instanceof Promise) {
+      params.then((resolvedParams: any) => {
+        setId(resolvedParams.id);
+      });
+    } else {
+      setId((params as any).id);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (!id) return;
+
     const fetchInvestigation = async () => {
       try {
         const orgId = localStorage.getItem('organizationId') || 'demo-org';

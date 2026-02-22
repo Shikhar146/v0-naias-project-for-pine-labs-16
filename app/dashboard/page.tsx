@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LayoutWrapper } from '@/components/layout-wrapper';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,22 @@ import {
 import { Investigation } from '@/lib/types/investigations';
 
 export default function Dashboard() {
+  const router = useRouter();
   const [investigations, setInvestigations] = useState<Investigation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // Check if user is authenticated
+    const user = localStorage.getItem('user');
+    if (!user) {
+      // Redirect to login if not authenticated
+      router.push('/login');
+      return;
+    }
+    setIsAuthenticated(true);
+
     const fetchInvestigations = async () => {
       try {
         const orgId = localStorage.getItem('organizationId') || 'demo-org';
@@ -43,7 +55,7 @@ export default function Dashboard() {
     };
 
     fetchInvestigations();
-  }, []);
+  }, [router]);
 
   const activeInvestigations = investigations.filter(
     (i) => i.status === 'running' || i.status === 'draft'
@@ -74,6 +86,11 @@ export default function Dashboard() {
     };
     return colors[status] || colors.draft;
   };
+
+  // Don't render dashboard if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <LayoutWrapper>

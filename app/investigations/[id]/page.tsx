@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,24 +16,39 @@ import {
   ArrowLeft,
   Play,
   Download,
-  Share2,
   Loader2,
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Trash2,
 } from 'lucide-react';
 import { Investigation } from '@/lib/types/investigations';
 
 export default function InvestigationDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const router = useRouter();
+  const [id, setId] = useState<string | null>(null);
 
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
+    // Handle params as a Promise in Next.js 16
+    if (params instanceof Promise) {
+      params.then((resolvedParams: any) => {
+        setId(resolvedParams.id);
+      });
+    } else {
+      setId((params as any).id);
+    }
+  }, [params]);
+
+  useEffect(() => {
+    if (!id) return;
+
     const fetchInvestigation = async () => {
       try {
         const orgId = localStorage.getItem('organizationId') || 'demo-org';
@@ -68,13 +83,78 @@ export default function InvestigationDetailPage() {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      draft: 'bg-gray-500/10 text-gray-500',
-      running: 'bg-primary/10 text-primary',
+      draft: 'bg-blue-500/10 text-blue-500',
+      pending: 'bg-yellow-500/10 text-yellow-500',
+      running: 'bg-purple-500/10 text-purple-500',
       completed: 'bg-green-500/10 text-green-500',
       failed: 'bg-destructive/10 text-destructive',
-      archived: 'bg-muted/10 text-muted-foreground',
     };
     return colors[status] || colors.draft;
+  };
+
+  const handleExport = () => {
+    if (!investigation) return;
+
+    const exportData = {
+      id: investigation.id,
+      title: investigation.title,
+      description: investigation.description,
+      type: investigation.type,
+      severity: investigation.severity,
+      status: investigation.status,
+      timeWindowStart: investigation.timeWindowStart,
+      timeWindowEnd: investigation.timeWindowEnd,
+      createdAt: investigation.createdAt,
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `investigation-${investigation.id}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDelete = async () => {
+    if (!investigation || !id) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the investigation "${investigation.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    setDeleting(true);
+
+    try {
+      const orgId = localStorage.getItem('organizationId') || 'demo-org';
+      const response = await fetch(`/api/investigations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-organization-id': orgId,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to delete investigation');
+      }
+
+      // Wait a moment before redirecting
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Redirect to dashboard after successful deletion
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Error deleting investigation:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete investigation');
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -97,11 +177,11 @@ export default function InvestigationDetailPage() {
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link
-            href="/investigations"
+            href="/dashboard"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Investigations
+            Back to Dashboard
           </Link>
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
@@ -161,13 +241,18 @@ export default function InvestigationDetailPage() {
                   </Link>
                 </Button>
               )}
-              <Button variant="outline">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share
-              </Button>
-              <Button variant="outline">
+              <Button variant="outline" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {deleting ? 'Deleting...' : 'Delete'}
               </Button>
             </div>
           </div>

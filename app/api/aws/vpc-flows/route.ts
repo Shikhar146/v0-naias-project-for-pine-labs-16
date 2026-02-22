@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       timeRange: { startTime, endTime },
     });
   } catch (error) {
-    console.error('[v0] VPC Flows API error:', error);
+    console.error('VPC Flows API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch VPC Flow Logs' },
       { status: 500 }

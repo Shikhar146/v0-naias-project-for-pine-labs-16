@@ -78,7 +78,7 @@ export async function GET(
 
     return NextResponse.json(rcaResults);
   } catch (error) {
-    console.error('[v0] RCA fetch error:', error);
+    console.error('RCA fetch error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch RCA results' },
       { status: 500 }

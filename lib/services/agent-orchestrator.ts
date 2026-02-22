@@ -33,7 +33,6 @@ export class AgentOrchestrator {
     context: InvestigationContext
   ): Promise<void> {
     this.context = context;
-    console.log('[v0] Orchestrator: Initializing investigation', context);
   }
 
   /**
@@ -90,8 +89,6 @@ export class AgentOrchestrator {
     };
 
     this.tasks.set(taskId, task);
-
-    console.log(`[v0] Agent: ${description}`);
 
     // Simulate execution
     task.status = 'running';

@@ -1,71 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock investigation details
-const mockInvestigation = {
-  id: '1',
-  title: 'Payment Processing API Timeout',
-  description: 'Orders failing to process between 14:30 and 14:45 UTC. 2500+ transactions affected.',
-  type: 'incident',
-  status: 'completed',
-  severity: 'critical',
-  createdAt: '2024-02-21T14:30:00Z',
-  timeWindowStart: '2024-02-21T14:30:00Z',
-  timeWindowEnd: '2024-02-21T14:45:00Z',
-  resourceFilters: {
-    service: ['payment-api', 'payment-processor'],
-    region: ['us-east-1a', 'us-east-1b'],
-  },
-  aiInsights: {
-    rootCause: 'Database connection pool exhaustion in payment processor service. Service failed to properly return connections after processing.',
-    confidence: 0.87,
-    evidence: [
-      {
-        type: 'CloudWatch Log',
-        timestamp: '2024-02-21 14:32:45',
-        message: 'Connection pool size: 100/100 (exhausted)',
-        severity: 'critical',
-      },
-      {
-        type: 'VPC Flow Log',
-        timestamp: '2024-02-21 14:32:42',
-        message: 'Connection reset from db-primary-01 to payment-svc-03',
-        severity: 'high',
-      },
-    ],
-    remediationSteps: [
-      {
-        step: 1,
-        action: 'Increase database connection pool size from 100 to 200',
-        priority: 'immediate',
-      },
-      {
-        step: 2,
-        action: 'Implement connection pool health check every 30 seconds',
-        priority: 'high',
-      },
-    ],
-  },
-};
+import { getDb } from '@/lib/db/client';
+import { COLLECTIONS } from '@/lib/db/models';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
+    const db = await getDb();
+    const orgId = request.headers.get('x-organization-id') || 'demo-org';
 
-    // In a real app, query the database
-    if (id === '1') {
-      return NextResponse.json(mockInvestigation);
+    // Find investigation in MongoDB
+    const investigation = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .findOne({
+        id: id,
+        organizationId: orgId,
+        deletedAt: { $exists: false }, // Exclude soft-deleted investigations
+      });
+
+    if (!investigation) {
+      return NextResponse.json(
+        { error: 'Investigation not found' },
+        { status: 404 }
+      );
     }
 
-    // Return mock data for demo
-    return NextResponse.json({
-      ...mockInvestigation,
-      id,
-      title: `Investigation ${id}`,
-    });
+    return NextResponse.json(investigation);
   } catch (error) {
+    console.error('Error fetching investigation:', error);
     return NextResponse.json(
       { error: 'Failed to fetch investigation' },
       { status: 500 }
@@ -75,31 +39,95 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    const db = await getDb();
+    const orgId = request.headers.get('x-organization-id') || 'demo-org';
     const body = await request.json();
 
-    // In a real app, update in database
-    const updated = { ...mockInvestigation, ...body, id: params.id };
+    const result = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .updateOne(
+        {
+          id: id,
+          organizationId: orgId,
+          deletedAt: { $exists: false },
+        },
+        {
+          $set: {
+            ...body,
+            updatedAt: new Date(),
+          },
+        }
+      );
 
-    return NextResponse.json(updated);
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { error: 'Investigation not found' },
+        { status: 404 }
+      );
+    }
+
+    // Fetch updated investigation
+    const updatedInvestigation = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .findOne({ id: id, organizationId: orgId });
+
+    return NextResponse.json(updatedInvestigation);
   } catch (error) {
+    console.error('Error updating investigation:', error);
     return NextResponse.json(
       { error: 'Failed to update investigation' },
-      { status: 400 }
+      { status: 500 }
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // In a real app, archive in database
-    return NextResponse.json({ id: params.id, archived: true });
+    const { id } = await params;
+    const db = await getDb();
+    const orgId = request.headers.get('x-organization-id') || 'demo-org';
+
+    // Soft delete by marking with deletedAt timestamp
+    const result = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .updateOne(
+        {
+          id: id,
+          organizationId: orgId,
+          deletedAt: { $exists: false },
+        },
+        {
+          $set: {
+            deletedAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { error: 'Investigation not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        id,
+        message: 'Investigation deleted successfully',
+      },
+      { status: 200 }
+    );
   } catch (error) {
+    console.error('Error deleting investigation:', error);
     return NextResponse.json(
       { error: 'Failed to delete investigation' },
       { status: 500 }

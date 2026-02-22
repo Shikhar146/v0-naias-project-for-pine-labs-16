@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[v0] CloudWatch API error:', error);
+    console.error('CloudWatch API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch CloudWatch logs' },
       { status: 500 }

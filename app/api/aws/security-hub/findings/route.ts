@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       ],
     });
   } catch (error) {
-    console.error('[v0] Security Hub API error:', error);
+    console.error('Security Hub API error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch Security Hub findings' },
       { status: 500 }

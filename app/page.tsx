@@ -24,7 +24,7 @@ export default function Home() {
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Network className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">NAIAS</span>
+            <span className="font-bold text-xl text-foreground">Network AI Autonomous System</span>
           </div>
           <div className="flex gap-4 items-center">
             <Link
@@ -67,14 +67,11 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#features">Learn More</Link>
-            </Button>
           </div>
         </div>
 
         {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
+        <div id="features" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20 scroll-mt-20">
           {[
             {
               icon: Brain,
@@ -158,32 +155,9 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/demo">Request Demo</Link>
-            </Button>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/50 bg-card/30 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            © 2024 NAIAS by Pine Labs. All rights reserved.
-          </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
-            <Link href="#" className="hover:text-foreground transition">
-              Privacy
-            </Link>
-            <Link href="#" className="hover:text-foreground transition">
-              Terms
-            </Link>
-            <Link href="#" className="hover:text-foreground transition">
-              Docs
-            </Link>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

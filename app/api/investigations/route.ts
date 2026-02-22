@@ -1,71 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock investigations data
-const investigations = [
-  {
-    id: '1',
-    title: 'Payment Processing API Timeout',
-    description: 'Orders failing to process between 14:30 and 14:45 UTC',
-    type: 'incident',
-    status: 'completed',
-    severity: 'critical',
-    createdAt: new Date('2024-02-21T14:30:00Z'),
-    timeWindowStart: new Date('2024-02-21T14:30:00Z'),
-    timeWindowEnd: new Date('2024-02-21T14:45:00Z'),
-    resourceFilters: {
-      service: ['payment-api'],
-      region: ['us-east-1'],
-    },
-    aiInsights: {
-      rootCause: 'Database connection pool exhaustion',
-      confidence: 0.87,
-      evidence: ['Connection timeout logs', 'VPC Flow anomalies'],
-    },
-  },
-  {
-    id: '2',
-    title: 'Network Latency Spike',
-    description: 'Elevated latency detected on production networks',
-    type: 'performance',
-    status: 'running',
-    severity: 'high',
-    createdAt: new Date('2024-02-20T10:15:00Z'),
-    timeWindowStart: new Date('2024-02-20T10:00:00Z'),
-    timeWindowEnd: new Date('2024-02-20T11:00:00Z'),
-    resourceFilters: {},
-  },
-  {
-    id: '3',
-    title: 'Security Audit - Unencrypted Credentials',
-    description: 'PCI-DSS compliance check for credential storage',
-    type: 'audit',
-    status: 'draft',
-    severity: 'critical',
-    createdAt: new Date('2024-02-19T09:00:00Z'),
-    timeWindowStart: new Date('2024-02-19T00:00:00Z'),
-    timeWindowEnd: new Date('2024-02-19T23:59:59Z'),
-    resourceFilters: {},
-  },
-];
+import { getDb } from '@/lib/db/client';
+import { COLLECTIONS } from '@/lib/db/models';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: NextRequest) {
   try {
+    const db = await getDb();
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const severity = searchParams.get('severity');
+    const orgId = request.headers.get('x-organization-id') || 'demo-org';
 
-    let filtered = investigations;
+    // Build query
+    const query: any = {
+      organizationId: orgId,
+      deletedAt: { $exists: false }, // Exclude soft-deleted investigations
+    };
 
     if (status) {
-      filtered = filtered.filter((inv) => inv.status === status);
+      query.status = status;
     }
 
     if (severity) {
-      filtered = filtered.filter((inv) => inv.severity === severity);
+      query.severity = severity;
     }
 
-    return NextResponse.json(filtered);
+    // Fetch from MongoDB
+    const investigations = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return NextResponse.json(investigations);
   } catch (error) {
+    console.error('Error fetching investigations:', error);
     return NextResponse.json(
       { error: 'Failed to fetch investigations' },
       { status: 500 }
@@ -75,25 +44,34 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const db = await getDb();
     const body = await request.json();
+    const orgId = request.headers.get('x-organization-id') || 'demo-org';
+
+    const investigationId = uuidv4();
 
     const investigation = {
-      id: String(investigations.length + 1),
+      id: investigationId,
+      organizationId: orgId,
       title: body.title,
       description: body.description,
       type: body.type || 'incident',
       status: 'draft',
       severity: body.severity || 'medium',
-      createdAt: new Date(),
-      timeWindowStart: body.timeWindowStart,
-      timeWindowEnd: body.timeWindowEnd,
+      timeWindowStart: new Date(body.timeWindowStart),
+      timeWindowEnd: new Date(body.timeWindowEnd),
       resourceFilters: body.resourceFilters || {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
-    investigations.push(investigation);
+    const result = await db
+      .collection(COLLECTIONS.INVESTIGATIONS)
+      .insertOne(investigation as any);
 
     return NextResponse.json(investigation, { status: 201 });
   } catch (error) {
+    console.error('Error creating investigation:', error);
     return NextResponse.json(
       { error: 'Failed to create investigation' },
       { status: 400 }

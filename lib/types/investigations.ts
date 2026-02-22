@@ -28,6 +28,7 @@ export interface AIInsights {
 }
 
 export interface Investigation {
+  completedAt: any;
   id: string;
   title: string;
   description?: string;

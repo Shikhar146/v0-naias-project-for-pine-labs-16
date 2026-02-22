@@ -9,21 +9,11 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'NAIAS - Network AI Autonomous System | Pine Labs',
   description: 'AI-powered network investigation platform for rapid root-cause analysis, incident investigation, and compliance audits. Built for fintech infrastructure teams.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
 }
 
 export const viewport = {
-  themeColor: '#1a1a2e',
-  colorScheme: 'dark',
+  themeColor: '#f5f3f0',
+  colorScheme: 'light',
   userScalable: false,
 }
 
@@ -33,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body className="font-sans antialiased bg-background text-foreground">
         {children}
         <Analytics />
